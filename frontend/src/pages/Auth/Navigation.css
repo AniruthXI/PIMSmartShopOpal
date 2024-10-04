@@ -1,0 +1,56 @@
+#navigation-container {
+  height: 4%;
+  transition: height 0.3s ease-in-out;
+  overflow: hidden; /* Hide overflowing content during transition */
+  background-color: #0a7734; /* Set background color to black */
+  display: flex; /* Use flexbox to align items */
+  flex-direction: column; /* Arrange items vertically */
+  justify-content: space-between; /* Add space between items */
+}
+
+#navigation-container:hover {
+  height: 15%;
+}
+
+.nav-link {
+  color: green; /* Set text color to green */
+  padding: 10px; /* Add padding for spacing */
+  text-decoration: none; /* Remove default underline */
+  transition: color 0.2s ease-in-out; /* Add transition for color change */
+}
+
+.nav-link:hover {
+  color: white; /* Change text color on hover */
+}
+
+.dropdown-menu {
+  display: none; /* Initially hide dropdown menu */
+  background-color: #0a7734; /* Set background color to black */
+  padding: 10px; /* Add padding for spacing */
+  position: absolute; /* Position menu absolutely */
+  top: 100%; /* Position below parent element */
+  left: 0; /* Align with parent element */
+}
+
+.dropdown-menu li {
+  margin-bottom: 5px; /* Add margin between menu items */
+}
+
+.dropdown-menu a {
+  color: green; /* Set text color to green */
+  text-decoration: none; /* Remove default underline */
+}
+
+.dropdown-menu a:hover {
+  color: white; /* Change text color on hover */
+}
+
+.dropdown:hover .dropdown-menu {
+  display: block; /* Show dropdown menu on hover */
+}
+
+/* App.css */
+.logo {
+  height: 40px;
+  margin-right: 8px;
+}
