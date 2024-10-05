@@ -40,7 +40,7 @@ const HeartIcon = ({ product }) => {
 
     return (
         <div
-            className="absolute top-2 right-5 cursor-pointer"
+            className="absolute top-2 right-2 cursor-pointer"
             onClick={toggleFavorites}
         >
             {isFavorite ? (

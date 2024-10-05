@@ -37,8 +37,8 @@ const Navigation = () => {
     };
 
     return (
-        <div className="p-4 bg-green-800 text-white flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+        <div className={`p-4 bg-green-800 text-white flex items-center justify-between ${mobileMenuOpen ? "pb-48 md:pb-36" : ""}`}>
+            <div className="flex items-center justify-stretch space-x-4">
                 <Link to="/" className="flex items-center">
                     <img src={Logo} alt="Logo" className="max-h-14 mr-2" />
                 </Link>
@@ -60,8 +60,8 @@ const Navigation = () => {
                         <span>Favourite</span>
                     </Link>
                 </div>
-                <div className="md:hidden">
-                    <button onClick={toggleMobileMenu}>
+                <div className="absolute md:hidden right-4 top-8">
+                    <button onClick={toggleMobileMenu} className="ml-auto">
                         {mobileMenuOpen ? <AiOutlineClose size={26} /> : <AiOutlineMenu size={26} />}
                     </button>
                 </div>
@@ -126,6 +126,9 @@ const Navigation = () => {
             {mobileMenuOpen && (
                 <div className="absolute top-0 left-0 w-full bg-green-800 text-white p-4 md:hidden">
                     <div className="flex flex-col space-y-4">
+                        <button onClick={toggleMobileMenu}>
+                                {mobileMenuOpen ? <AiOutlineClose size={26} /> : <AiOutlineMenu size={26} />}
+                        </button>
                         <Link to="/" className="flex items-center" onClick={toggleMobileMenu}>
                             <AiOutlineHome className="mr-2" size={26} />
                             <span>HOME</span>

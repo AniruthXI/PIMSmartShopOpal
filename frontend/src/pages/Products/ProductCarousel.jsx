@@ -19,12 +19,12 @@ const ProductCarousel = () => {
         speed: 500,
         slidesToShow: 1,
         slidesToScroll: 1,
-        arrows: true,
-        autoplay: true,
         autoplaySpeed: 3000,
+        arrows: false,
+        autoplay: true,
     };
 
-    const settings2 = {
+    const settings2 = { 
         dots: false,
         infinite: true,
         speed: 500,
@@ -36,20 +36,18 @@ const ProductCarousel = () => {
         className: "slider2", // เพิ่ม className เพื่อใช้กำหนด style แยก
     };
 
+    const slides = [slide1,slide2,slide3];
+
     return (
-        <div className="mb-2 lg:block xl:block md:block m-[100px] flex flex-col gap-4">
+        <div className="mb-2 sm:m-[100px] block flex flex-col gap-4">
             {/* Larger carousel */}
-            <div className="w-full">
+            <div>
                 <Slider {...settings}>
-                    <div>
-                        <img src={slide1} alt="Slide 1" />
-                    </div>
-                    <div>
-                        <img src={slide2} alt="Slide 2" />
-                    </div>
-                    <div>
-                        <img src={slide3} alt="Slide 3" />
-                    </div>
+                    {slides.map((src, index) => (
+                        <div key={index}>
+                            <img src={src} alt={`Slide ${index + 1}`} className="object-cover w-full h-full"/>
+                        </div>
+                    ))}
                 </Slider>
             </div>
         </div>

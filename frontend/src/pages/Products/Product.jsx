@@ -3,28 +3,61 @@ import { Link } from "react-router-dom";
 import HeartIcon from "./HeartIcon";
 
 const Product = ({ product }) => {
+    const truncateName = (text, isName = true) => {
+        let maxLength;
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d");
+        context.font = "16px Arial";
+    
+        const width = window.innerWidth;
+        
+        if (width < 640) {
+            maxLength = isName? 120: 240; 
+        } else{
+            maxLength = isName? 175: 350; 
+        }
+    
+        // Check the visual length of the name
+        let truncatedName = text;
+        
+        while (context.measureText(truncatedName).width > maxLength && truncatedName.length > 0) { // Change 200 to the maximum width you want
+            truncatedName = truncatedName.substring(0, truncatedName.length - 1); // Remove the last character
+        }
+    
+        // Add ellipsis if truncated
+        return truncatedName.length < text.length ? truncatedName + "..." : text;
+    };
+
     return (
-        <div className="max-w-xs bg-white border border-gray-300 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
-            <div className="relative">
-                <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-48 object-cover"
-                />
-                <HeartIcon product={product} className="absolute top-2 right-2"/>
-            </div>
-            <div className="p-4">
+        <div
+            key={product._id}
+            className="group bg-white border border-gray-300 shadow-lg rounded-lg p-2 sm:p-4 hover:shadow-xl transition-shadow duration-300">
+
+            {/* Image Section */}
+            <div className="relative aspect-square overflow-hidden rounded-md bg-gray-200 group-hover:opacity-75">
                 <Link to={`/product/${product._id}`}>
-                    <h2 className="text-lg font-semibold flex justify-between items-center mb-2">
-                        <div>{product.name}</div>
-                        <span className="bg-green-100 text-green-500 text-xs font-medium px-2.5 py-0.5 rounded-full dark:bg-green-900 dark:text-green-300">
-                            ฿{product.price}
-                        </span>
-                    </h2>
+                    <img
+                        src={product.image}
+                        alt={product.name}
+                        className="object-cover w-full h-full" />
                 </Link>
-                <div className="text-gray-700 text-sm">{product.description}</div>
+                <HeartIcon product={product} className="absolute z-20 cursor-pointer" />
+            </div>
+
+            {/* Text Section */}
+            <div className="mt-4 flex justify-between">
+                <div>
+                    <h3 className="text-base sm:text-sm text-gray-700">
+                        <Link to={`/product/${product._id}`}>
+                            {truncateName(product.name)}
+                        </Link>
+                    </h3>
+                    <p className="mt-1 text-sm text-gray-500">{truncateName(product.description, false)}</p>
+                </div>
+                <p className="text-base sm:text-sm font-medium text-green-600">฿{product.price}</p>
             </div>
         </div>
+
     );
 };
 
