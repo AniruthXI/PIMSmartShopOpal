@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useGetFilteredProductsQuery } from "../redux/api/productApiSlice";
 import { useFetchCategoriesQuery } from "../redux/api/categoryApiSlice";
+import { AiOutlineFilter,AiOutlineClose } from "react-icons/ai";
 
 import {
     setCategories,
@@ -16,6 +17,7 @@ const Shop = () => {
     const { categories, products, checked, radio } = useSelector(
         (state) => state.shop
     );
+    const [isOpenFilter, setIsOpenFilter] = useState(false);
 
     const categoriesQuery = useFetchCategoriesQuery();
     const [priceFilter, setPriceFilter] = useState("");
@@ -82,11 +84,15 @@ const Shop = () => {
         setNameFilter(e.target.value);
     };
 
+    const toggleFilterClick = ()=>{
+        setIsOpenFilter(!isOpenFilter)
+    }
+
     return (
         <>
-            <div className="container mx-auto ">
+            <div className="container mx-auto">
                 <div className="flex md:flex-row">
-                    <div className="bg-[#151515] p-3 mt-2 mb-2 ">
+                    <div className={`bg-[#151515] z-10 p-3 m-2 rounded-2xl md:block md:sticky top-0 max-h-screen overflow-y-auto w-full w-[16rem] min-w-[16rem] ${isOpenFilter? "fixed shadow-2xl" : "hidden"}`} style={{msOverflowStyle: 'none', scrollbarWidth: 'none'}}>
                         <h2 className="h4 text-center py-3 bg-white rounded-full mb-2">
                             Filter by Categories
                         </h2>
@@ -175,21 +181,28 @@ const Shop = () => {
                         </div>
                     </div>
 
-                    <div className="p-3" style={{ marginTop: '6rem' }}>
+                  
+
+                    <div className="p-2 md:p-3">
                         <h2 className="h4 text-center mb-2">{products?.length} Products</h2>
-                        <div className="flex flex-wrap">
+                        <div className="grid grid-cols-2 md:grid-cols-3 mb-12">
                             {products.length === 0 ? (
                                 <Loader />
                             ) : (
-                                products?.map((p) => (
-                                    <div className="p-3" key={p._id}>
-                                        <ProductCard p={p} />
-                                    </div>
+                                products?.map((product) => (
+                                        <ProductCard product={product} />
                                 ))
                             )}
                         </div>
                     </div>
                 </div>
+                <button onClick={toggleFilterClick} className="fixed md:hidden rounded-full bg-green-700 p-4 bottom-3  right-3 shadow-xl">
+                        {!isOpenFilter?
+                            <AiOutlineFilter size={20} className="text-white" />
+                        : 
+                            <AiOutlineClose size={20} className="text-white"/>
+                        }
+                </button>
             </div>
         </>
     );

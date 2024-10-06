@@ -5,7 +5,7 @@ import { addToCart } from "../../redux/features/cart/cartSlice";
 import { toast } from "react-toastify";
 import HeartIcon from "./HeartIcon";
 
-const ProductCard = ({ p }) => {
+const ProductCard = ({ product }) => {
     const dispatch = useDispatch();
 
     const addToCartHandler = (product, qty) => {
@@ -16,42 +16,66 @@ const ProductCard = ({ p }) => {
         });
     };
 
+    const truncateName = (text, isName = true) => {
+        let maxLength;
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d");
+        context.font = "16px Arial";
+    
+        const width = window.innerWidth;
+        
+        if (width < 640) {
+            maxLength = isName? 100: 150; 
+        } else{
+            maxLength = isName? 180: 250; 
+        }
+    
+        // Check the visual length of the name
+        let truncatedName = text;
+        
+        while (context.measureText(truncatedName).width > maxLength && truncatedName.length > 0) { // Change 200 to the maximum width you want
+            truncatedName = truncatedName.substring(0, truncatedName.length - 1); // Remove the last character
+        }
+    
+        // Add ellipsis if truncated
+        return truncatedName.length < text.length ? truncatedName + "..." : text;
+    };
+
     return (
-        <div className="w-80 h-auto relative bg-[#1a1a1a] rounded-lg shadow dark:bg-gray-800 dark:border-gray-700">
-            <section className="relative h-64">
-                <Link to={`/product/${p._id}`}>
+        <div key={product._id} className="h-auto relative bg-[#1a1a1a] rounded-lg shadow dark:bg-gray-800 dark:border-gray-700 m-1 overflow-hidden">
+            <section className="relative">
+                <Link to={`/product/${product._id}`}>
                     <span className="absolute bottom-3 right-3 bg-green-100 text-green-800 text-sm font-medium mr-2 px-2.5 py-0.5 rounded-full dark:bg-green-900 dark:text-green-300">
-                        {p?.brand}
+                        {product?.brand}
                     </span>
                     <img
-                        className="cursor-pointer w-full h-full"
-                        src={p.image}
-                        alt={p.name}
-                        style={{ objectFit: "cover" }}
+                        className="cursor-pointer aspect-square object-cover w-full h-full"
+                        src={product.image}
+                        alt={product.name}
                     />
                 </Link>
-                <HeartIcon product={p} />
+                <HeartIcon product={product} />
             </section>
 
-            <div className="p-5 flex flex-col justify-between h-auto">
+            <div className="p-2 md:p-4 flex flex-col justify-between h-auto">
                 <div className="flex justify-between">
-                    <h5 className="text-xl text-white dark:text-white">{p?.name}</h5>
-                    <p className="text-black font-semibold text-green-500">
-                        {p?.price?.toLocaleString("en-US", {
+                    <p className="text-sm md:text-lg dark:text-white">{truncateName(product?.name)}</p>
+                    <p className="text-xs md:text-lg font-semibold text-green-500">
+                        {product?.price?.toLocaleString("th-TH", {
                             style: "currency",
-                            currency: "USD",
+                            currency: "THB",
                         })}
                     </p>
                 </div>
 
-                <p className="font-normal text-[#CFCFCF]">
-                    {p?.description?.substring(0, 60)} ...
+                <p className="text-xs font-normal text-[#CFCFCF]">
+                    {truncateName(product?.description, false)}
                 </p>
 
                 <section className="flex justify-between items-center mt-2">
                     <Link
-                        to={`/product/${p._id}`}
-                        className="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-green-700 rounded-lg hover:bg-green-800 focus:ring-4 focus:outline-none focus:ring-green-300 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
+                        to={`/product/${product._id}`}
+                        className="inline-flex items-center p-1 md:px-3 md:py-2 text-sm font-medium text-center text-white bg-green-700 rounded-lg hover:bg-green-800 focus:ring-4 focus:outline-none focus:ring-green-300 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
                     >
                         Read More
                         <svg
@@ -73,9 +97,9 @@ const ProductCard = ({ p }) => {
 
                     <button
                         className="p-2 rounded-full"
-                        onClick={() => addToCartHandler(p, 1)}
+                        onClick={() => addToCartHandler(product, 1)}
                     >
-                        <AiOutlineShoppingCart size={25} />
+                        <AiOutlineShoppingCart size={25} className="text-green-500" />
                     </button>
                 </section>
             </div>
