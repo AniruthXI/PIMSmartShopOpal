@@ -25,9 +25,9 @@ const ProductCard = ({ product }) => {
         const width = window.innerWidth;
         
         if (width < 640) {
-            maxLength = isName? 100: 150; 
+            maxLength = isName? 100: 180; 
         } else{
-            maxLength = isName? 180: 250; 
+            maxLength = isName? 160: 300; 
         }
     
         // Check the visual length of the name
