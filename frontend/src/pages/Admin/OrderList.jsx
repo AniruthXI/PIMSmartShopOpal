@@ -17,7 +17,7 @@ const OrderList = () => {
                 </Message>
             ) : (
                 <table className="container mx-auto">
-                    <AdminMenu />
+                    {/* <AdminMenu /> */}
 
                     <thead className="w-full border">
                         <tr className="mb-[5rem]">

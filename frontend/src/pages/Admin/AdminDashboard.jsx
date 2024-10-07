@@ -87,7 +87,7 @@ const AdminDashboard = () => {
 
     return (
         <>
-            <AdminMenu />
+            {/* <AdminMenu /> */}
             <section className="xl:ml-[4rem] md:ml-[0rem]">
                 <div className="w-[80%] flex justify-around flex-wrap">
                     <div className="rounded-lg bg-white p-5 w-[20rem] mt-5 border border-black">

@@ -90,7 +90,7 @@ const CategoryList = () => {
 
     return (
         <div className="ml-[10rem] flex flex-col md:flex-row">
-            <AdminMenu />
+            {/* <AdminMenu /> */}
             <div className="md:w-3/4 p-3">
                 <h1 className="text-2xl font-semibold mb-4">Manage Categories</h1>
                 <form onSubmit={handleCreateCategory} className="mb-6">

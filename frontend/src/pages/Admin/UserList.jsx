@@ -58,7 +58,7 @@ const UserList = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <AdminMenu /> {/* Include AdminMenu component here */}
+      {/* <AdminMenu /> Include AdminMenu component here */}
       <h1 className="text-2xl font-semibold mb-4">Users</h1>
       {isLoading ? (
         <Loader />

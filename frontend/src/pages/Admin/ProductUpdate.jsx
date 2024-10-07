@@ -127,7 +127,7 @@ const AdminProductUpdate = () => {
     return (
         <div className="container xl:mx-[9rem] sm:mx-[0]">
             <div className="flex flex-col md:flex-row">
-                <AdminMenu />
+                {/* <AdminMenu /> */}
                 <div className="md:w-3/4 p-6">
                     <h2 className="text-2xl font-bold mb-6">Update / Delete Product</h2>
                     {image && (
