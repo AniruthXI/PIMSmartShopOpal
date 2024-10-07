@@ -70,25 +70,14 @@ const Navigation = () => {
             <div className="relative hidden md:block">
                 {userInfo ? (
                     <div>
-                        <button onClick={toggleDropdown} className="flex items-center text-gray-8000 focus:outline-none">
+                        <button onClick={toggleDropdown} className="text-gray-8000 focus:outline-none flex items-center">
                             <span>{userInfo.username}</span>
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className={`h-4 w-4 ml-1 ${dropdownOpen ? "transform rotate-180" : ""}`}
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="white"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d={dropdownOpen ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"}
-                                />
+                            <svg className={`h-4 w-4 ml-1 ${dropdownOpen ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="none" stroke="white">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={dropdownOpen ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"} />
                             </svg>
                         </button>
                         {dropdownOpen && (
-                            <AdminMenu userInfo={userInfo} logoutHandler={logoutHandler}/>
+                            <AdminMenu userInfo={userInfo} logoutHandler={logoutHandler} />
                         )}
                     </div>
                 ) : (
@@ -124,24 +113,14 @@ const Navigation = () => {
                     <div className="mt-4">
                         {userInfo ? (
                             <div>
-                                <button onClick={toggleDropdown} className="flex items-center text-gray-8000 focus:outline-none">
+                                <button onClick={toggleDropdown} className="text-gray-8000 focus:outline-none flex items-center">
                                     <span>{userInfo.username}</span>
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className={`h-4 w-4 ml-1 ${dropdownOpen ? "transform rotate-180" : ""}`}
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="white">
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth="2"
-                                            d={dropdownOpen ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"}
-                                        />
+                                    <svg className={`h-4 w-4 ml-1 ${dropdownOpen ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="none" stroke="white">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={dropdownOpen ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"} />
                                     </svg>
                                 </button>
                                 {dropdownOpen && (
-                                    <AdminMenu userInfo={userInfo} logoutHandler={logoutHandler}/>
+                                    <AdminMenu userInfo={userInfo} logoutHandler={logoutHandler} />
                                 )}
                             </div>
                         ) : (
