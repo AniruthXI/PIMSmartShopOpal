@@ -95,19 +95,19 @@ const PlaceOrder = () => {
           <div className="flex justify-between flex-wrap p-8 bg-white">
             <ul className="text-lg">
               <li>
-                <span className="font-semibold mb-4">Items:</span> $
+                <span className="font-semibold mb-4">ราคา:</span> $
                 {cart.itemsPrice}
               </li>
               <li>
-                <span className="font-semibold mb-4">Shipping:</span> $
+                <span className="font-semibold mb-4">ค่าส่ง:</span> $
                 {cart.shippingPrice}
               </li>
               <li>
-                <span className="font-semibold mb-4">Tax:</span> $
+                <span className="font-semibold mb-4">Vat:</span> $
                 {cart.taxPrice}
               </li>
               <li>
-                <span className="font-semibold mb-4">Total:</span> $
+                <span className="font-semibold mb-4">รวม:</span> $
                 {cart.totalPrice}
               </li>
             </ul>
@@ -118,20 +118,20 @@ const PlaceOrder = () => {
               <h2 className="text-2xl font-semibold mb-4">Shipping</h2>
               {shippingAddress.address ? (
                 <p>
-                  <strong>Address:</strong> {shippingAddress.address},{" "}
+                  <strong>ที่อยู่ในการจัดส่ง:</strong> {shippingAddress.address},{" "}
                   {shippingAddress.city} {shippingAddress.postalCode},{" "}
                   {shippingAddress.country}
                 </p>
               ) : (
                 <p>
-                  <strong>Address:</strong> {cart.deliveryOption === "store" ? "Pick up at store" : "Ship to address"}
+                  <strong>ที่อยู่ในการจัดส่ง:</strong> {cart.deliveryOption === "store" ? "Pick up at store" : "Ship to address"}
                 </p>
               )}
             </div>
 
             <div>
-              <h2 className="text-2xl font-semibold mb-4">Payment Method</h2>
-              <strong>Method:</strong> {paymentMethod}
+              <h2 className="text-2xl font-semibold mb-4">ช่องทางในการชำระเงิน</h2>
+              <strong>เลือก:</strong> {paymentMethod}
             </div>
           </div>
 

@@ -175,19 +175,19 @@ const Order = () => {
 
         <h2 className="text-xl font-bold mb-2 mt-[3rem]">Order Summary</h2>
         <div className="flex justify-between mb-2">
-          <span>Items</span>
+          <span>ราคา</span>
           <span>$ {order.itemsPrice}</span>
         </div>
         <div className="flex justify-between mb-2">
-          <span>Shipping</span>
+          <span>ค่าส่ง</span>
           <span>${order.shippingPrice}</span>
         </div>
         <div className="flex justify-between mb-2">
-          <span>Tax</span>
+          <span>Vat</span>
           <span>${order.taxPrice}</span>
         </div>
         <div className="flex justify-between mb-2">
-          <span>Total</span>
+          <span>รวมทั้งหมด</span>
           <span>${order.totalPrice}</span>
         </div>
 

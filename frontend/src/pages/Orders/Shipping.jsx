@@ -36,12 +36,14 @@ const Shipping = () => {
       setPostalCode(defaultStoreAddress.postalCode);
       setCountry(defaultStoreAddress.country);
     } else {
-      setAddress(shippingAddress.address || "");
-      setCity(shippingAddress.city || "");
-      setPostalCode(shippingAddress.postalCode || "");
-      setCountry(shippingAddress.country || "");
+      // เมื่อเลือก "home" หรือวิธีการจัดส่งอื่นๆ จะเคลียร์ข้อมูลที่อยู่
+      setAddress("");
+      setCity("");
+      setPostalCode("");
+      setCountry("");
     }
-  }, [deliveryOption, shippingAddress]);
+  }, [defaultStoreAddress.address, defaultStoreAddress.city, defaultStoreAddress.country, defaultStoreAddress.postalCode, deliveryOption, shippingAddress]);
+  
 
   const submitHandler = (e) => {
     e.preventDefault();
@@ -62,9 +64,9 @@ const Shipping = () => {
       <ProgressSteps step1 step2 />
       <div className="mt-[10rem] flex justify-around items-center flex-wrap">
         <form onSubmit={submitHandler} className="w-[40rem]">
-          <h1 className="text-2xl font-semibold mb-4">Shipping</h1>
+          <h1 className="text-2xl font-semibold mb-4">ที่อยู่ในการจัดส่ง</h1>
           <div className="mb-4">
-            <label className="block text-black mb-2">Address</label>
+            <label className="block text-black mb-2">ที่อยู่</label>
             <input
               type="text"
               className="w-full p-2 border rounded text-black"
@@ -76,7 +78,7 @@ const Shipping = () => {
             />
           </div>
           <div className="mb-4">
-            <label className="block text-black mb-2">City</label>
+            <label className="block text-black mb-2">จังหวัด</label>
             <input
               type="text"
               className="w-full p-2 border rounded text-black"
@@ -88,7 +90,7 @@ const Shipping = () => {
             />
           </div>
           <div className="mb-4">
-            <label className="block text-black mb-2">Postal Code</label>
+            <label className="block text-black mb-2">รหัสไปรษณีไทย</label>
             <input
               type="text"
               className="w-full p-2 border rounded text-black"
@@ -100,7 +102,7 @@ const Shipping = () => {
             />
           </div>
           <div className="mb-4">
-            <label className="block text-black mb-2">Country</label>
+            <label className="block text-black mb-2">ประเทศไทย</label>
             <input
               type="text"
               className="w-full p-2 border rounded text-black"
@@ -112,7 +114,7 @@ const Shipping = () => {
             />
           </div>
           <div className="mb-4">
-            <label className="block text-gray-400">Delivery Option</label>
+            <label className="block text-gray-400">ตัวเลือกในการรับสินค้า</label>
             <div className="mt-2">
               <label className="inline-flex items-center">
                 <input
@@ -123,7 +125,7 @@ const Shipping = () => {
                   checked={deliveryOption === "store"}
                   onChange={(e) => setDeliveryOption(e.target.value)}
                 />
-                <span className="ml-2">Pick up at store</span>
+                <span className="ml-2">รับที่ร้าน</span>
               </label>
               <label className="inline-flex items-center">
                 <input
@@ -134,12 +136,12 @@ const Shipping = () => {
                   checked={deliveryOption === "shipping"}
                   onChange={(e) => setDeliveryOption(e.target.value)}
                 />
-                <span className="ml-2">Ship to address</span>
+                <span className="ml-2">จัดส่งที่บ้าน</span>
               </label>
             </div>
           </div>
           <div className="mb-4">
-            <label className="block text-gray-400">Select Method</label>
+            <label className="block text-gray-400">เลือกวิธีชำระเงิน</label>
             <div className="mt-2">
               <label className="inline-flex items-center">
                 <input
@@ -151,7 +153,7 @@ const Shipping = () => {
                   onChange={(e) => setPaymentMethod(e.target.value)}
                 />
 
-                <span className="ml-2">PayPal or Credit Card</span>
+                <span className="ml-2">QR CODE</span>
               </label>
             </div>
           </div>

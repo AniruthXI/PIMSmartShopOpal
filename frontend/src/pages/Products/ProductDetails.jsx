@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 import {
     useGetProductDetailsQuery,
     useCreateReviewMutation,
@@ -60,6 +61,14 @@ const ProductDetails = () => {
 
     const addToCartHandler = () => {
         dispatch(addToCart({ ...product, qty }));
+        toast.success(`เพิ่มสินค้า "${product.name}" ลงในตะกร้าแล้ว!`, {
+            position: "top-right",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+        });
         navigate("/cart");
     };
 
