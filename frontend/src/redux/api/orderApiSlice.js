@@ -11,6 +11,17 @@ export const orderApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
+    // สำหรับส่วนที่ต้องแก้ไขใน orderApiSlice.js
+    uploadPaymentProof: builder.mutation({
+      query: (formData) => ({
+        url: `${ORDERS_URL}/${formData.get("orderId")}/upload-payment-proof`,
+        method: "POST",
+        body: formData,
+        // เพิ่ม formData flag เพื่อให้ RTK Query จัดการ content-type ให้ถูกต้อง
+        formData: true,
+      }),
+    }),
+
     getOrderDetails: builder.query({
       query: (id) => ({
         url: `${ORDERS_URL}/${id}`,
@@ -62,8 +73,26 @@ export const orderApiSlice = apiSlice.injectEndpoints({
     getTotalSalesByDate: builder.query({
       query: () => `${ORDERS_URL}/total-sales-by-date`,
     }),
+
+    updatePaymentStatus: builder.mutation({
+      query: ({ orderId, isPaid }) => ({
+        url: `/api/orders/${orderId}/pay`,
+        method: 'PUT',
+        body: { isPaid }
+      }),
+    }),
+
+    sendOrderConfirmationEmail: builder.mutation({
+      query: (data) => ({
+        url: `${ORDERS_URL}/${data.orderId}/send-confirmation`,
+        method: 'POST',
+        body: data
+      })
+    })
   }),
 });
+
+
 
 export const {
   useGetTotalOrdersQuery,
@@ -77,4 +106,7 @@ export const {
   useGetMyOrdersQuery,
   useDeliverOrderMutation,
   useGetOrdersQuery,
+  useUploadPaymentProofMutation,
+  useUpdatePaymentStatusMutation,
+  useSendOrderConfirmationEmailMutation,
 } = orderApiSlice;

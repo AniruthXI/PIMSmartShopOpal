@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -11,11 +10,8 @@ import { clearCartItems } from "../../redux/features/cart/cartSlice";
 
 const PlaceOrder = () => {
   const navigate = useNavigate();
-
-  // ใช้ useSelector เพื่อดึงข้อมูลจาก Redux store
   const cart = useSelector((state) => state.cart);
-  const { shippingAddress, paymentMethod, cartItems, itemsPrice, shippingPrice, taxPrice, totalPrice } = cart;
-
+  const dispatch = useDispatch();
   const [createOrder, { isLoading, error }] = useCreateOrderMutation();
 
   useEffect(() => {
@@ -23,8 +19,6 @@ const PlaceOrder = () => {
       navigate("/shipping");
     }
   }, [cart.paymentMethod, cart.shippingAddress.address, navigate]);
-
-  const dispatch = useDispatch();
 
   const placeOrderHandler = async () => {
     try {
@@ -45,109 +39,118 @@ const PlaceOrder = () => {
   };
 
   return (
-    <>
-      <ProgressSteps step1 step2 step3 />
+    <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto">
+        <ProgressSteps step1 step2 step3 />
 
-      <div className="container mx-auto mt-8">
-        {cart.cartItems.length === 0 ? (
-          <Message>Your cart is empty</Message>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr>
-                  <td className="px-1 py-2 text-left align-top">Image</td>
-                  <td className="px-1 py-2 text-left">Product</td>
-                  <td className="px-1 py-2 text-left">Quantity</td>
-                  <td className="px-1 py-2 text-left">Price</td>
-                  <td className="px-1 py-2 text-left">Total</td>
-                </tr>
-              </thead>
+        <div className="mt-8 bg-white rounded-xl shadow-lg overflow-hidden">
+          {cart.cartItems.length === 0 ? (
+            <div className="p-4">
+              <Message>ไม่มีสินค้าในตะกร้า</Message>
+            </div>
+          ) : (
+            <div className="p-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">รายการสินค้า</h2>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">รูปภาพ</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">สินค้า</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">จำนวน</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">ราคา</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">รวม</th>
+                    </tr>
+                  </thead>
 
-              <tbody>
-                {cart.cartItems.map((item, index) => (
-                  <tr key={index}>
-                    <td className="p-2">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-16 h-16 object-cover"
-                      />
-                    </td>
+                  <tbody className="divide-y divide-gray-200">
+                    {cart.cartItems.map((item, index) => (
+                      <tr key={index}>
+                        <td className="px-4 py-3">
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="w-16 h-16 object-cover rounded-lg"
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <Link to={`/product/${item.product}`} className="text-green-600 hover:text-green-800">
+                            {item.name}
+                          </Link>
+                        </td>
+                        <td className="px-4 py-3">{item.qty}</td>
+                        <td className="px-4 py-3">฿{item.price.toFixed(2)}</td>
+                        <td className="px-4 py-3 font-medium">฿{(item.qty * item.price).toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-                    <td className="p-2">
-                      <Link to={`/product/${item.product}`}>{item.name}</Link>
-                    </td>
-                    <td className="p-2">{item.qty}</td>
-                    <td className="p-2">{item.price.toFixed(2)}</td>
-                    <td className="p-2">
-                    ฿ {(item.qty * item.price).toFixed(2)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+              <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">ที่อยู่จัดส่ง</h3>
+                    <p className="text-gray-700">
+                      {cart.shippingAddress.address && (
+                        <>
+                          {cart.shippingAddress.address}, {cart.shippingAddress.city}{" "}
+                          {cart.shippingAddress.postalCode}, {cart.shippingAddress.country}
+                        </>
+                      )}
+                    </p>
+                  </div>
 
-        <div className="mt-8">
-          <h2 className="text-2xl font-semibold mb-5">Order Summary</h2>
-          <div className="flex justify-between flex-wrap p-8 bg-white">
-            <ul className="text-lg">
-              <li>
-                <span className="font-semibold mb-4">ราคา:</span> $
-                {cart.itemsPrice}
-              </li>
-              <li>
-                <span className="font-semibold mb-4">ค่าส่ง:</span> $
-                {cart.shippingPrice}
-              </li>
-              <li>
-                <span className="font-semibold mb-4">Vat:</span> $
-                {cart.taxPrice}
-              </li>
-              <li>
-                <span className="font-semibold mb-4">รวม:</span> $
-                {cart.totalPrice}
-              </li>
-            </ul>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">วิธีการชำระเงิน</h3>
+                    <p className="text-gray-700">QR PromptPay</p>
+                  </div>
+                </div>
 
-            {error && <Message variant="danger">{error.data.message}</Message>}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">สรุปคำสั่งซื้อ</h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span>ราคาสินค้า</span>
+                      <span>฿{cart.itemsPrice}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>ค่าจัดส่ง</span>
+                      <span>฿{cart.shippingPrice}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>VAT 7%</span>
+                      <span>฿{cart.taxPrice}</span>
+                    </div>
+                    <div className="flex justify-between font-bold text-lg pt-3 border-t">
+                      <span>ยอดรวมทั้งหมด</span>
+                      <span>฿{cart.totalPrice}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">Shipping</h2>
-              {shippingAddress.address ? (
-                <p>
-                  <strong>ที่อยู่ในการจัดส่ง:</strong> {shippingAddress.address},{" "}
-                  {shippingAddress.city} {shippingAddress.postalCode},{" "}
-                  {shippingAddress.country}
-                </p>
-              ) : (
-                <p>
-                  <strong>ที่อยู่ในการจัดส่ง:</strong> {cart.deliveryOption === "store" ? "Pick up at store" : "Ship to address"}
-                </p>
+              {error && (
+                <div className="mt-4">
+                  <Message variant="danger">{error.data.message}</Message>
+                </div>
               )}
+
+              <button
+                type="button"
+                className="mt-8 w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors duration-200"
+                disabled={cart.cartItems.length === 0}
+                onClick={placeOrderHandler}
+              >
+                ยืนยันการสั่งซื้อ
+              </button>
             </div>
-
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">ช่องทางในการชำระเงิน</h2>
-              <strong>เลือก:</strong> {paymentMethod}
-            </div>
-          </div>
-
-          <button
-            type="button"
-            className="bg-green-800 text-white py-2 px-4 rounded-full text-lg w-full mt-4 hover:bg-green-500"
-            disabled={cart.cartItems === 0}
-            onClick={placeOrderHandler}
-          >
-            Place Order
-          </button>
-
-          {isLoading && <Loader />}
+          )}
         </div>
+
+        {isLoading && <Loader />}
       </div>
-    </>
+    </div>
   );
 };
 

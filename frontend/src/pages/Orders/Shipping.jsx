@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import {
@@ -18,9 +18,8 @@ const Shipping = () => {
   const [country, setCountry] = useState("");
   const [deliveryOption, setDeliveryOption] = useState("");
 
-  // Default address for pick up at store
   const defaultStoreAddress = {
-    address: "สถาบันการจัดการปัญญาภิวัฒน์ อาคาร ConventionHall 85 ถ. แจ้งวัฒนะ ตำบลบางตลาด อ.ปากเกร็ด",
+    address: "รับที่ร้าน PIM SmartShop อาคาร ConventionHall",
     city: "นนทบุรี",
     postalCode: "11120",
     country: "ประเทศไทย",
@@ -36,18 +35,15 @@ const Shipping = () => {
       setPostalCode(defaultStoreAddress.postalCode);
       setCountry(defaultStoreAddress.country);
     } else {
-      // เมื่อเลือก "home" หรือวิธีการจัดส่งอื่นๆ จะเคลียร์ข้อมูลที่อยู่
       setAddress("");
       setCity("");
       setPostalCode("");
       setCountry("");
     }
-  }, [defaultStoreAddress.address, defaultStoreAddress.city, defaultStoreAddress.country, defaultStoreAddress.postalCode, deliveryOption, shippingAddress]);
+  }, [defaultStoreAddress, deliveryOption, shippingAddress]);
   
-
   const submitHandler = (e) => {
     e.preventDefault();
-
     dispatch(saveShippingAddress({ address, city, postalCode, country }));
     dispatch(savePaymentMethod(paymentMethod));
     navigate("/placeorder");
@@ -60,110 +56,123 @@ const Shipping = () => {
   }, [navigate, shippingAddress, deliveryOption]);
 
   return (
-    <div className="container mx-auto mt-10">
-      <ProgressSteps step1 step2 />
-      <div className="mt-[10rem] flex justify-around items-center flex-wrap">
-        <form onSubmit={submitHandler} className="w-[40rem]">
-          <h1 className="text-2xl font-semibold mb-4">ที่อยู่ในการจัดส่ง</h1>
-          <div className="mb-4">
-            <label className="block text-black mb-2">ที่อยู่</label>
-            <input
-              type="text"
-              className="w-full p-2 border rounded text-black"
-              placeholder="Enter address"
-              value={address}
-              required
-              onChange={(e) => setAddress(e.target.value)}
-              disabled={deliveryOption === "store"}
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-black mb-2">จังหวัด</label>
-            <input
-              type="text"
-              className="w-full p-2 border rounded text-black"
-              placeholder="Enter city"
-              value={city}
-              required
-              onChange={(e) => setCity(e.target.value)}
-              disabled={deliveryOption === "store"}
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-black mb-2">รหัสไปรษณีไทย</label>
-            <input
-              type="text"
-              className="w-full p-2 border rounded text-black"
-              placeholder="Enter postal code"
-              value={postalCode}
-              required
-              onChange={(e) => setPostalCode(e.target.value)}
-              disabled={deliveryOption === "store"}
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-black mb-2">ประเทศไทย</label>
-            <input
-              type="text"
-              className="w-full p-2 border rounded text-black"
-              placeholder="Enter country"
-              value={country}
-              required
-              onChange={(e) => setCountry(e.target.value)}
-              disabled={deliveryOption === "store"}
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-gray-400">ตัวเลือกในการรับสินค้า</label>
-            <div className="mt-2">
-              <label className="inline-flex items-center">
-                <input
-                  type="radio"
-                  className="form-radio text-green-500"
-                  name="deliveryOption"
-                  value="store"
-                  checked={deliveryOption === "store"}
-                  onChange={(e) => setDeliveryOption(e.target.value)}
-                />
-                <span className="ml-2">รับที่ร้าน</span>
-              </label>
-              <label className="inline-flex items-center">
-                <input
-                  type="radio"
-                  className="form-radio text-green-500"
-                  name="deliveryOption"
-                  value="shipping"
-                  checked={deliveryOption === "shipping"}
-                  onChange={(e) => setDeliveryOption(e.target.value)}
-                />
-                <span className="ml-2">จัดส่งที่บ้าน</span>
-              </label>
-            </div>
-          </div>
-          <div className="mb-4">
-            <label className="block text-gray-400">เลือกวิธีชำระเงิน</label>
-            <div className="mt-2">
-              <label className="inline-flex items-center">
-                <input
-                  type="radio"
-                  className="form-radio text-green-500"
-                  name="paymentMethod"
-                  value="PayPal"
-                  checked={paymentMethod === "PayPal"}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                />
+    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-2xl mx-auto bg-white shadow-xl rounded-xl overflow-hidden">
+        <div className="px-6 py-8">
+          <ProgressSteps step1 step2 />
+          
+          <form onSubmit={submitHandler} className="space-y-6">
+            <div>
+              <h1 className="text-3xl font-extrabold text-center text-gray-900 mb-8">ที่อยู่ในการจัดส่ง</h1>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">ที่อยู่</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-black focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
+                    placeholder="กรอกที่อยู่"
+                    value={address}
+                    required
+                    onChange={(e) => setAddress(e.target.value)}
+                    disabled={deliveryOption === "store"}
+                  />
+                </div>
 
-                <span className="ml-2">QR CODE</span>
-              </label>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">จังหวัด</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-black focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
+                    placeholder="กรอกจังหวัด"
+                    value={city}
+                    required
+                    onChange={(e) => setCity(e.target.value)}
+                    disabled={deliveryOption === "store"}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">รหัสไปรษณีย์</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-black focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
+                    placeholder="กรอกรหัสไปรษณีย์"
+                    value={postalCode}
+                    required
+                    onChange={(e) => setPostalCode(e.target.value)}
+                    disabled={deliveryOption === "store"}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">ประเทศ</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-black focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
+                    placeholder="กรอกประเทศ"
+                    value={country}
+                    required
+                    onChange={(e) => setCountry(e.target.value)}
+                    disabled={deliveryOption === "store"}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">ตัวเลือกในการรับสินค้า</label>
+                  <div className="flex space-x-4 text-black">
+                    <label className="inline-flex items-center">
+                      <input
+                        type="radio"
+                        className="form-radio text-green-500"
+                        name="deliveryOption"
+                        value="store"
+                        checked={deliveryOption === "store"}
+                        onChange={(e) => setDeliveryOption(e.target.value)}
+                      />
+                      <span className="ml-2">รับที่ร้าน</span>
+                    </label>
+                    <label className="inline-flex items-center">
+                      <input
+                        type="radio"
+                        className="form-radio text-green-500"
+                        name="deliveryOption"
+                        value="shipping"
+                        checked={deliveryOption === "shipping"}
+                        onChange={(e) => setDeliveryOption(e.target.value)}
+                      />
+                      <span className="ml-2">จัดส่งที่บ้าน</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">เลือกวิธีชำระเงิน</label>
+                  <div className="flex text-black">
+                    <label className="inline-flex items-center">
+                      <input
+                        type="radio"
+                        className="form-radio text-green-500"
+                        name="paymentMethod"
+                        value="PayPal"
+                        checked={paymentMethod === "PayPal"}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                      />
+                      <span className="ml-2">QR CODE</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-          <button
-            className="bg-green-500 text-black py-2 px-4 rounded-full text-lg w-full"
-            type="submit"
-          >
-            Continue
-          </button>
-        </form>
+
+            <button
+              className="w-full bg-green-600 text-white py-3 rounded-md hover:bg-green-700 transition-colors duration-300 ease-in-out shadow-md"
+              type="submit"
+            >
+              ดำเนินการต่อ
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );

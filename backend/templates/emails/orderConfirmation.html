@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: 'Kanit', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            width: 150px;
+            margin-bottom: 20px;
+        }
+        .order-number {
+            color: #4a90e2;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .items-table th,
+        .items-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        .items-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+        .total {
+            text-align: right;
+            font-size: 1.2em;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .shipping-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: #666;
+        }
+        .highlight {
+            color: #4a90e2;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="cid:logo_pim" alt="PIM Logo" 
+     style="background-color: #4CAF50; padding: 5px; border-radius: 5px; width: 120px; height: auto;" />
+            <h1>ขอบคุณสำหรับการสั่งซื้อ</h1>
+            <div class="order-number">คำสั่งซื้อเลขที่: #{{orderNumber}}</div>
+        </div>
+
+        <p>เรียน คุณ {{username}},  {{email}}</p>
+        <p>เราได้รับคำสั่งซื้อของคุณเรียบร้อยแล้ว และกำลังดำเนินการจัดส่ง</p>
+
+        <h2>รายละเอียดคำสั่งซื้อ</h2>
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>สินค้า</th>
+                    <th>จำนวน</th>
+                    <th>ราคา</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each items}}
+                <tr>
+                    <td>{{name}}</td>
+                    <td>{{qty}} ชิ้น</td>
+                    <td>฿{{price}}</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+
+        <div class="total">
+            <div>ยอดรวมทั้งสิ้น: <span class="highlight">฿{{totalAmount}}</span></div>
+        </div>
+
+        <div class="shipping-info">
+            <h3>ที่อยู่จัดส่ง</h3>
+            <p>{{shippingAddress.address}}</p>
+            <p>{{shippingAddress.city}} {{shippingAddress.postalCode}}</p>
+            <p>{{shippingAddress.country}}</p>
+        </div>
+
+        <div class="footer">
+            <p>หากมีข้อสงสัยเพิ่มเติม กรุณาติดต่อเรา</p>
+            <p>อีเมล: support@shop.com | โทร: 02-XXX-XXXX</p>
+        </div>
+    </div>
+</body>
+</html>
