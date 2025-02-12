@@ -2,14 +2,14 @@ import { useState } from "react";
 import Message from "../../components/Message";
 import Loader from "../../components/Loader";
 import { Link } from "react-router-dom";
-import { useGetOrdersQuery, useDeliverOrderMutation, useUpdatePaymentStatusMutation } from "../../redux/api/orderApiSlice";
+import { useGetOrdersQuery, useDeliverOrderMutation, useUpdatePaymentStatusMutation, useUpdateOrderStatusMutation } from "../../redux/api/orderApiSlice";
+
 import AdminMenu from "./AdminMenu";
 import { toast } from "react-toastify";
 
 const OrderList = () => {
     const { data: orders, isLoading, error, refetch } = useGetOrdersQuery();
-    const [deliverOrder] = useDeliverOrderMutation();
-    const [updatePaymentStatus] = useUpdatePaymentStatusMutation();
+    const [updateOrderStatus] = useUpdateOrderStatusMutation();
 
     const [showStatusModal, setShowStatusModal] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState(null);
@@ -23,40 +23,25 @@ const OrderList = () => {
 
     const handleStatusUpdate = async () => {
         try {
-            const payload = {
+            const result = await updateOrderStatus({
                 orderId: selectedOrder._id,
+                type: modalType,
                 status: selectedStatus
-            };
+            }).unwrap();
 
-            let result;
-            if (modalType === "delivery") {
-                result = await deliverOrder(payload).unwrap();
-            } else {
-                result = await updatePaymentStatus(payload).unwrap();
+            console.log('API Response:', result);  // ดูค่าทั้งหมดที่ได้รับจาก API
+            console.log('Updated order:', result.order);  // ดูค่า order ที่อัพเดทแล้ว
+            console.log('Payment Status:', result.order.paymentStatus);  // ดูค่าเฉพาะ status
+            console.log('Delivery Status:', result.order.deliveryStatus);
+
+            if (result.success) {
+                console.log('Updated order:', result.order); // เพิ่มบรรทัดนี้
+                setShowStatusModal(false);
+                toast.success(result.message || 'อัพเดทสถานะสำเร็จ');
             }
-
-            // Update the local state immediately
-            const updatedOrders = orders.map(order => {
-                if (order._id === selectedOrder._id) {
-                    return {
-                        ...order,
-                        [modalType === "delivery" ? "deliveryStatus" : "paymentStatus"]: selectedStatus,
-                        // Update isPaid and isDelivered based on status
-                        isPaid: modalType === "payment" ? selectedStatus === "paid" : order.isPaid,
-                        isDelivered: modalType === "delivery" ? selectedStatus === "delivered" : order.isDelivered
-                    };
-                }
-                return order;
-            });
-
-            // Force a refetch to ensure sync with backend
-            await refetch();
-
-            setShowStatusModal(false);
-            toast.success(`อัพเดตสถานะ${modalType === "delivery" ? "การจัดส่ง" : "การชำระเงิน"}เรียบร้อย`);
         } catch (err) {
             console.error("Error updating status:", err);
-            toast.error(err?.data?.message || err.error);
+            toast.error(err?.data?.message || "เกิดข้อผิดพลาดในการอัพเดตสถานะ");
         }
     };
 
@@ -83,26 +68,62 @@ const OrderList = () => {
     ];
 
     // Status badge logic updated to handle both status types correctly
-    const getStatusBadge = (status, type) => {
-        const colors = {
-            pending: "yellow",
-            processing: "blue",
-            delivered: "green",
-            paid: "green",
-            failed: "red",
-            cancelled: "red"
-        };
+    const PaymentStatusBadge = ({ status }) => {
+        switch (status) {
+            case 'paid':
+                return (
+                    <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                        ชำระแล้ว
+                    </span>
+                );
+            case 'processing':
+                return (
+                    <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                        กำลังตรวจสอบ
+                    </span>
+                );
+            case 'failed':
+                return (
+                    <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                        การชำระเงินล้มเหลว
+                    </span>
+                );
+            default:
+                return (
+                    <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                        รอชำระเงิน
+                    </span>
+                );
+        }
+    };
 
-        const color = colors[status] || "gray";
-
-        return (
-            <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-${color}-100 text-${color}-800`}>
-                {type === "delivery"
-                    ? deliveryStatuses.find(s => s.value === status)?.label
-                    : paymentStatuses.find(s => s.value === status)?.label
-                }
-            </span>
-        );
+    const DeliveryStatusBadge = ({ status }) => {
+        switch (status) {
+            case 'delivered':
+                return (
+                    <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                        จัดส่งแล้ว
+                    </span>
+                );
+            case 'processing':
+                return (
+                    <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                        กำลังจัดส่ง
+                    </span>
+                );
+            case 'cancelled':
+                return (
+                    <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                        ยกเลิก
+                    </span>
+                );
+            default:
+                return (
+                    <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                        กำลังจัดเตรียมสินค้า
+                    </span>
+                );
+        }
     };
 
     return (
@@ -197,75 +218,21 @@ const OrderList = () => {
 
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center gap-2">
-                                                    {(() => {
-                                                        // เลือกสีและข้อความตาม paymentStatus
-                                                        switch (order.paymentStatus) {
-                                                            case 'paid':
-                                                                return (
-                                                                    <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                                        ชำระแล้ว
-                                                                    </span>
-                                                                );
-                                                            case 'processing':
-                                                                return (
-                                                                    <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                                        กำลังตรวจสอบ
-                                                                    </span>
-                                                                );
-                                                            case 'failed':
-                                                                return (
-                                                                    <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                                                        การชำระเงินล้มเหลว
-                                                                    </span>
-                                                                );
-                                                            default: // case 'pending'
-                                                                return (
-                                                                    <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                                    ชำระแล้ว
-                                                                </span>
-                                                                );
-                                                        }
-                                                    })()}
-                                                    <button
-                                                        onClick={() => openStatusModal(order, "payment")}
-                                                        className="text-sm text-blue-600 hover:text-blue-900"
-                                                    >
-                                                        แก้ไข
-                                                    </button>
+                                                    <PaymentStatusBadge status={order.paymentStatus} />
+                                                    {order && order._id && (
+                                                        <button
+                                                            onClick={() => openStatusModal(order, "payment")}
+                                                            className="text-sm text-blue-600 hover:text-blue-900"
+                                                        >
+                                                            แก้ไข
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
 
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center gap-2">
-                                                    {(() => {
-                                                        // เลือกสีและข้อความตาม deliveryStatus
-                                                        switch (order.deliveryStatus) {
-                                                            case 'delivered':
-                                                                return (
-                                                                    <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                                        จัดส่งแล้ว
-                                                                    </span>
-                                                                );
-                                                            case 'processing':
-                                                                return (
-                                                                    <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                                        กำลังจัดส่ง
-                                                                    </span>
-                                                                );
-                                                            case 'cancelled':
-                                                                return (
-                                                                    <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                                                        ยกเลิก
-                                                                    </span>
-                                                                );
-                                                            default: // case 'pending'
-                                                                return (
-                                                                    <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                                                        กำลังจัดเตรียมสินค้า
-                                                                    </span>
-                                                                );
-                                                        }
-                                                    })()}
+                                                    <DeliveryStatusBadge status={order.deliveryStatus} />
                                                     <button
                                                         onClick={() => openStatusModal(order, "delivery")}
                                                         className="text-sm text-blue-600 hover:text-blue-900"

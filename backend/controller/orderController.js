@@ -442,6 +442,49 @@ const sendOrderConfirmation = asyncHandler(async (req, res) => {
   }
 });
 
+// backend/controllers/orderController.js
+const updateStatus = asyncHandler(async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { type, status } = req.body;
+    
+    const order = await Order.findById(orderId);
+    if (!order) {
+      res.status(404);
+      throw new Error("ไม่พบคำสั่งซื้อ");
+    }
+
+    if (type === 'payment') {
+      order.paymentStatus = status;
+      if (status === 'paid') {
+        order.isPaid = true;
+        order.paidAt = Date.now();
+      }
+    } else if (type === 'delivery') {
+      order.deliveryStatus = status;
+      if (status === 'delivered') {
+        order.isDelivered = true;
+        order.deliveredAt = Date.now();
+      }
+    }
+
+    const updatedOrder = await order.save();
+
+    // เพิ่มการ populate ข้อมูลที่จำเป็น
+    const populatedOrder = await Order.findById(updatedOrder._id)
+      .populate('user', 'id username')
+      .lean();  // ใช้ lean() เพื่อให้ได้ plain JavaScript object
+
+    res.json({
+      success: true,
+      message: `อัพเดทสถานะ${type === 'payment' ? 'การชำระเงิน' : 'การจัดส่ง'}สำเร็จ`,
+      order: populatedOrder
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export {
   createOrder,
   getAllOrders,
@@ -459,4 +502,5 @@ export {
   DeliveryStatus,
   updatePaymentStatus,
   sendOrderConfirmation,
+  updateStatus,
 };

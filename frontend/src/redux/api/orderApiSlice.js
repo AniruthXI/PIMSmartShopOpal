@@ -11,13 +11,11 @@ export const orderApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    // สำหรับส่วนที่ต้องแก้ไขใน orderApiSlice.js
     uploadPaymentProof: builder.mutation({
       query: (formData) => ({
         url: `${ORDERS_URL}/${formData.get("orderId")}/upload-payment-proof`,
         method: "POST",
         body: formData,
-        // เพิ่ม formData flag เพื่อให้ RTK Query จัดการ content-type ให้ถูกต้อง
         formData: true,
       }),
     }),
@@ -50,16 +48,8 @@ export const orderApiSlice = apiSlice.injectEndpoints({
     }),
 
     getOrders: builder.query({
-      query: () => ({
-        url: ORDERS_URL,
-      }),
-    }),
-
-    deliverOrder: builder.mutation({
-      query: (orderId) => ({
-        url: `${ORDERS_URL}/${orderId}/deliver`,
-        method: "PUT",
-      }),
+      query: () => ORDERS_URL,
+      providesTags: ['Order'], // ให้ข้อมูลภายใต้ tag 'Order'
     }),
 
     getTotalOrders: builder.query({
@@ -75,38 +65,62 @@ export const orderApiSlice = apiSlice.injectEndpoints({
     }),
 
     updatePaymentStatus: builder.mutation({
-      query: ({ orderId, isPaid }) => ({
-        url: `/api/orders/${orderId}/pay`,
-        method: 'PUT',
-        body: { isPaid }
+      query: ({ id, status }) => ({
+        url: `${ORDERS_URL}/${id}/pay`,
+        method: "PUT",
+        body: { status },
+      }),
+    }),
+
+    deliverOrder: builder.mutation({
+      query: ({ id, status }) => ({
+        url: `${ORDERS_URL}/${id}/deliver`,
+        method: "PUT",
+        body: { status },
       }),
     }),
 
     sendOrderConfirmationEmail: builder.mutation({
       query: (data) => ({
         url: `${ORDERS_URL}/${data.orderId}/send-confirmation`,
-        method: 'POST',
-        body: data
-      })
-    })
+        method: "POST",
+        body: data,
+      }),
+    }),
+
+    // frontend/src/redux/api/orderApiSlice.js
+    updateOrderStatus: builder.mutation({
+      query: ({ orderId, type, status }) => ({
+        url: `${ORDERS_URL}/${orderId}/status`,
+        method: "PUT",
+        body: { type, status },
+      }),
+      invalidatesTags: ['Order'], // ทำให้ข้อมูลที่มี tag 'Order' หมดอายุ
+      // อาจเพิ่ม transformResponse ถ้าต้องการ
+      transformResponse: (response) => {
+        return {
+          success: true,
+          message: response.message,
+          order: response.order
+        };
+      },
+    }),
   }),
 });
 
-
-
 export const {
-  useGetTotalOrdersQuery,
-  useGetTotalSalesQuery,
-  useGetTotalSalesByDateQuery,
-  // ------------------
   useCreateOrderMutation,
   useGetOrderDetailsQuery,
   usePayOrderMutation,
   useGetPaypalClientIdQuery,
   useGetMyOrdersQuery,
-  useDeliverOrderMutation,
   useGetOrdersQuery,
+  useDeliverOrderMutation,
   useUploadPaymentProofMutation,
   useUpdatePaymentStatusMutation,
   useSendOrderConfirmationEmailMutation,
+  useGetTotalOrdersQuery,
+  useGetTotalSalesQuery,
+  useGetTotalSalesByDateQuery,
+  useUpdateOrderStatusMutation,
 } = orderApiSlice;

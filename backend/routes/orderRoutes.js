@@ -15,6 +15,7 @@ import {
     markOrderAsDelivered,
     uploadPaymentProof, // เพิ่ม controller function
     sendOrderConfirmation,
+    updateStatus,
 } from "../controller/orderController.js";
 
 import { authenticate, authorizeAdmin } from "../middlewares/authMiddleware.js";
@@ -67,5 +68,7 @@ router.route("/:id/upload-payment-proof")
     .post(authenticate, upload.single('paymentProof'), uploadPaymentProof);
 
     router.post('/:id/send-confirmation', authenticate, sendOrderConfirmation);
+    // backend/routes/orderRoutes.js
+router.put('/:orderId/status', updateStatus);
 
 export default router;
