@@ -2,6 +2,7 @@ import Order from "../models/orderModel.js";
 import Product from "../models/productModel.js";
 import emailService from "../services/emailService.js";
 import asyncHandler from "../middlewares/asyncHandler.js";
+import mongoose from 'mongoose';
 
 // Utility Function
 function calcPrices(orderItems) {
@@ -10,7 +11,7 @@ function calcPrices(orderItems) {
     0
   );
 
-  const shippingPrice = itemsPrice > 100 ? 0 : 10;
+  const shippingPrice = itemsPrice > 0 ? 0 : 0;
   const taxRate = 0;
   const taxPrice = (itemsPrice * taxRate).toFixed(2);
 
@@ -192,11 +193,24 @@ const markOrderAsPaid = async (req, res) => {
   }
 };
 
-
 const markOrderAsDelivered = asyncHandler(async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id);
+    const orderId = req.params.id;
+    console.log('Received orderId:', orderId);
 
+    if (!orderId || orderId === 'undefined') {
+      res.status(400);
+      throw new Error("ไม่พบ ID ของคำสั่งซื้อ");
+    }
+
+    // ตรวจสอบว่า ID ถูกต้องตามรูปแบบ MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+      res.status(400);
+      throw new Error("รูปแบบ ID ไม่ถูกต้อง");
+    }
+
+    const order = await Order.findById(orderId);
+    
     if (!order) {
       res.status(404);
       throw new Error("ไม่พบคำสั่งซื้อ");
@@ -204,6 +218,7 @@ const markOrderAsDelivered = asyncHandler(async (req, res) => {
 
     order.isDelivered = true;
     order.deliveredAt = new Date();
+    order.deliveryStatus = "จัดส่งสำเร็จ";
 
     const updatedOrder = await order.save();
 
@@ -213,34 +228,70 @@ const markOrderAsDelivered = asyncHandler(async (req, res) => {
       order: updatedOrder,
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error in markOrderAsDelivered:', error);
+    res.status(error.status || 500).json({ 
+      error: error.message,
+      details: error.toString() 
+    });
   }
 });
 
 // backend/controllers/orderController.js
 const uploadPaymentProof = asyncHandler(async (req, res) => {
-  const order = await Order.findById(req.params.id);
+  const orderId = req.params.id;
+  const order = await Order.findById(orderId);
 
   if (!order) {
     res.status(404);
     throw new Error("ไม่พบคำสั่งซื้อ");
   }
 
+  // ตรวจสอบว่าอัปโหลดไฟล์มาหรือไม่
   if (!req.file) {
     res.status(400);
     throw new Error("กรุณาอัพโหลดไฟล์หลักฐานการชำระเงิน");
   }
 
-  // บันทึก URL ของไฟล์
-  order.paymentProof = `/uploads/${req.file.filename}`;
-  order.paymentProofUploadedAt = Date.now();
+  // ตรวจสอบนามสกุลไฟล์ว่าเป็นรูปภาพ
+  const allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+  if (!allowedMimeTypes.includes(req.file.mimetype)) {
+    res.status(400);
+    throw new Error("อนุญาตให้อัพโหลดเฉพาะไฟล์รูปภาพเท่านั้น (JPEG, PNG, JPG, WEBP)");
+  }
 
-  await order.save();
+  try {
+    // สร้าง URL แบบเต็มรูปแบบ
+    const proofUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    
+    // อัพเดทข้อมูล order
+    order.paymentProof = {
+      url: proofUrl,
+      uploadedAt: new Date()
+    };
+    
+    // อัพเดทสถานะการชำระเงิน
+    order.isPaid = true;
+    order.paidAt = new Date();
+    
+    const updatedOrder = await order.save();
 
-  res.json({
-    message: "อัพโหลดหลักฐานการชำระเงินสำเร็จ",
-    paymentProof: order.paymentProof,
-  });
+    res.status(200).json({
+      message: "อัพโหลดหลักฐานการชำระเงินสำเร็จ",
+      paymentProof: updatedOrder.paymentProof.url,
+      uploadedAt: updatedOrder.paymentProof.uploadedAt,
+      isPaid: updatedOrder.isPaid,
+      paidAt: updatedOrder.paidAt
+    });
+  } catch (error) {
+    // ลบไฟล์ที่อัพโหลดหากเกิดข้อผิดพลาด
+    if (req.file) {
+      fs.unlink(req.file.path, (err) => {
+        if (err) console.error('Error deleting file:', err);
+      });
+    }
+    res.status(500);
+    throw new Error("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+  }
 });
 
 // Payment status enum
@@ -443,28 +494,62 @@ const sendOrderConfirmation = asyncHandler(async (req, res) => {
 });
 
 // backend/controllers/orderController.js
+const deliveryStatuses = [
+  { value: "pending", label: "รอจัดส่ง" },
+  { value: "processing", label: "กำลังจัดส่ง" },
+  { value: "delivered", label: "จัดส่งแล้ว" },
+  { value: "cancelled", label: "ยกเลิก" }
+];
+
+const paymentStatuses = [
+  { value: "pending", label: "รอชำระเงิน" },
+  { value: "processing", label: "กำลังตรวจสอบ" },
+  { value: "paid", label: "ชำระแล้ว" },
+  { value: "failed", label: "การชำระเงินล้มเหลว" }
+];
+
 const updateStatus = asyncHandler(async (req, res) => {
   try {
     const { orderId } = req.params;
     const { type, status } = req.body;
-    
+
     const order = await Order.findById(orderId);
     if (!order) {
       res.status(404);
       throw new Error("ไม่พบคำสั่งซื้อ");
     }
 
+    // ตรวจสอบสถานะที่ส่งเข้ามา
+    let isValidStatus = false;
+    if (type === 'payment') {
+      isValidStatus = paymentStatuses.some(s => s.value === status);
+    } else if (type === 'delivery') {
+      isValidStatus = deliveryStatuses.some(s => s.value === status);
+    }
+
+    if (!isValidStatus) {
+      res.status(400);
+      throw new Error("สถานะไม่ถูกต้อง");
+    }
+
+    // อัปเดตสถานะ
     if (type === 'payment') {
       order.paymentStatus = status;
       if (status === 'paid') {
         order.isPaid = true;
         order.paidAt = Date.now();
+      } else if (status === 'failed') {
+        order.isPaid = false;
+        order.paidAt = null;
       }
     } else if (type === 'delivery') {
       order.deliveryStatus = status;
       if (status === 'delivered') {
         order.isDelivered = true;
         order.deliveredAt = Date.now();
+      } else if (status === 'cancelled') {
+        order.isDelivered = false;
+        order.deliveredAt = null;
       }
     }
 

@@ -1,3 +1,5 @@
+/* eslint-disable react/prop-types */
+/* eslint-disable no-unused-vars */
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { FaTimes } from "react-icons/fa";
@@ -76,6 +78,17 @@ const AdminMenu = ({ userInfo, logoutHandler }) => {
           </li>
         </>
       )}
+      <li>
+        <NavLink
+          className="list-item py-2 px-3 mb-2 hover:bg-[#2E2D2D] rounded-sm whitespace-nowrap"
+          to="/UserOrderList"
+          style={({ isActive }) => ({
+            color: isActive ? "#0a7734" : "white",
+          })}
+        >
+          Your Order
+        </NavLink>
+      </li>
       <li>
         <NavLink
           className="list-item py-2 px-3 mb-2 hover:bg-[#2E2D2D] rounded-sm whitespace-nowrap"

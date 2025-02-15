@@ -32,36 +32,27 @@ const addProduct = asyncHandler(async (req, res) => {
 
 const updateProductDetails = asyncHandler(async (req, res) => {
     try {
-        const { name, description, price, category, quantity, brand } = req.fields;
+        // เพิ่ม console.log เพื่อดูข้อมูลที่ส่งมา
+        console.log('Request Body:', req.body);
+        console.log('Product ID:', req.params.id);
 
-        // Validation
-        switch (true) {
-            case !name:
-                return res.json({ error: "Name is required" });
-            case !brand:
-                return res.json({ error: "Brand is required" });
-            case !description:
-                return res.json({ error: "Description is required" });
-            case !price:
-                return res.json({ error: "Price is required" });
-            case !category:
-                return res.json({ error: "Category is required" });
-            case !quantity:
-                return res.json({ error: "Quantity is required" });
+        const product = await Product.findById(req.params.id);
+        if (!product) {
+            return res.status(404).json({ message: "Product not found" });
         }
 
-        const product = await Product.findByIdAndUpdate(
-            req.params.id,
-            { ...req.fields },
-            { new: true }
-        );
+        // อัพเดทแบบแยกฟิลด์
+        product.name = req.body.name || product.name;
+        product.price = Number(req.body.price) || product.price;
+        product.description = req.body.description || product.description;
+        // อัพเดทฟิลด์อื่นๆ ตามต้องการ
 
-        await product.save();
-
-        res.json(product);
+        const updatedProduct = await product.save();
+        
+        res.json(updatedProduct);
     } catch (error) {
-        console.error(error);
-        res.status(400).json(error.message);
+        console.error('Update Error:', error);
+        res.status(500).json({ message: error.message });
     }
 });
 
@@ -109,16 +100,27 @@ const fetchProducts = asyncHandler(async (req, res) => {
 
 const fetchProductById = asyncHandler(async (req, res) => {
     try {
-        const product = await Product.findById(req.params.id);
+        const { id } = req.params;
+        
+        // ตรวจสอบว่ามี id หรือไม่
+        if (!id) {
+            return res.status(400).json({ error: "Product ID is required" });
+        }
+
+        const product = await Product.findById(id);
+        
         if (product) {
             return res.json(product);
-        } else {
-            res.status(404);
-            throw new Error("Product not found");
-        }
+        } 
+
+        return res.status(404).json({ error: "Product not found" });
+        
     } catch (error) {
-        console.error(error);
-        res.status(404).json({ error: "Product not found" });
+        console.error("Error fetching product:", error);
+        return res.status(500).json({ 
+            error: "Error fetching product",
+            details: error.message 
+        });
     }
 });
 
@@ -126,7 +128,7 @@ const fetchAllProducts = asyncHandler(async (req, res) => {
     try {
         const products = await Product.find({})
             .populate("category")
-            .limit(12)
+            .limit(100)
             .sort({ createAt: -1 });
 
         res.json(products);

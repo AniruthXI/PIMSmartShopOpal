@@ -12,12 +12,16 @@ export const orderApiSlice = apiSlice.injectEndpoints({
     }),
 
     uploadPaymentProof: builder.mutation({
-      query: (formData) => ({
-        url: `${ORDERS_URL}/${formData.get("orderId")}/upload-payment-proof`,
-        method: "POST",
-        body: formData,
-        formData: true,
-      }),
+      query: ({ orderId, formData }) => {
+        // ไม่ต้องแปลง FormData เป็น object
+        return {
+          url: `/api/orders/${orderId}/upload-payment-proof`,
+          method: 'POST',
+          body: formData,
+          // ไม่ต้องตั้งค่า headers เพราะ browser จะจัดการให้อัตโนมัติ
+          formData: true, // บอก RTK Query ว่านี่คือ FormData
+        };
+      },
     }),
 
     getOrderDetails: builder.query({
@@ -73,12 +77,13 @@ export const orderApiSlice = apiSlice.injectEndpoints({
     }),
 
     deliverOrder: builder.mutation({
-      query: ({ id, status }) => ({
-        url: `${ORDERS_URL}/${id}/deliver`,
-        method: "PUT",
-        body: { status },
+      query: (orderId) => ({
+        url: `/api/orders/${orderId}/deliver`,
+        method: 'PUT'
       }),
+      invalidatesTags: ['Order']
     }),
+
 
     sendOrderConfirmationEmail: builder.mutation({
       query: (data) => ({
@@ -93,10 +98,9 @@ export const orderApiSlice = apiSlice.injectEndpoints({
       query: ({ orderId, type, status }) => ({
         url: `${ORDERS_URL}/${orderId}/status`,
         method: "PUT",
-        body: { type, status },
+        body: { type, status }, // ส่ง status ตามที่ backend รองรับ
       }),
-      invalidatesTags: ['Order'], // ทำให้ข้อมูลที่มี tag 'Order' หมดอายุ
-      // อาจเพิ่ม transformResponse ถ้าต้องการ
+      invalidatesTags: ['Order'],
       transformResponse: (response) => {
         return {
           success: true,

@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
@@ -11,16 +11,31 @@ import {
   useGetOrderDetailsQuery,
   useUploadPaymentProofMutation,
   useSendOrderConfirmationEmailMutation,
+  useUpdateOrderStatusMutation,
 } from "../../redux/api/orderApiSlice";
 import PaymentSuccessPopup from './PaymentSuccessPopup'
+import { log } from "handlebars";
+
 
 const Order = () => {
   const { id: orderId } = useParams();
-  const { data: order, refetch, isLoading, error } = useGetOrderDetailsQuery(orderId);
+  const { data: order, refetch, isLoading, error } = useGetOrderDetailsQuery(orderId, {
+    // เพิ่ม options สำหรับ polling
+    pollingInterval: 5000, // refetch ทุก 5 วินาที
+    refetchOnMountOrArgChange: true, // refetch เมื่อ component mount หรือ orderId เปลี่ยน
+    refetchOnFocus: true, // refetch เมื่อ user กลับมาที่แท็บนี้
+  });
+
+  useEffect(() => {
+    if (orderId) {
+      refetch();
+    }
+  }, [orderId, refetch]);
+
   const [deliverOrder, { isLoading: loadingDeliver }] = useDeliverOrderMutation();
   const [uploadPaymentProof, { isLoading: loadingUpload }] = useUploadPaymentProofMutation();
   const { userInfo } = useSelector((state) => state.auth);
-
+  const [updateOrderStatus] = useUpdateOrderStatusMutation();
   const [paymentProof, setPaymentProof] = useState(null);
   const [showProofModal, setShowProofModal] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
@@ -28,16 +43,30 @@ const Order = () => {
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [sendOrderConfirmationEmail] = useSendOrderConfirmationEmailMutation();
 
+  console.log('Current orderId from params:', orderId);
+
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    if (file && file.size > 2 * 1024 * 1024) {
+
+    // ตรวจสอบว่ามีไฟล์ถูกเลือกหรือไม่
+    if (!file) return;
+
+    // ตรวจสอบขนาดไฟล์
+    if (file.size > 2 * 1024 * 1024) {
       toast.error("ขนาดไฟล์เกิน 2MB กรุณาเลือกไฟล์ใหม่");
+      e.target.value = ''; // reset input
       return;
     }
-    if (file && !file.type.startsWith("image/")) {
-      toast.error("กรุณาอัพโหลดเฉพาะไฟล์รูปภาพ");
+
+    // ตรวจสอบประเภทไฟล์ที่อนุญาต
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("กรุณาอัพโหลดเฉพาะไฟล์รูปภาพ (JPEG, PNG, JPG, WEBP)");
+      e.target.value = ''; // reset input
       return;
     }
+
     setPaymentProof(file);
   };
 
@@ -61,38 +90,91 @@ const Order = () => {
       toast.error("กรุณาอัพโหลดหลักฐานการชำระเงินและตรวจสอบ orderId");
       return;
     }
-  
-    const formData = new FormData();
-    formData.append("paymentProof", paymentProof);
-    formData.append("orderId", orderId);
-  
+
     try {
-      const response = await uploadPaymentProof(formData).unwrap();
-      await deliverOrder(orderId).unwrap();
-      await sendConfirmationEmail(order);
-      refetch();
+      const formData = new FormData();
+      formData.append('paymentProof', paymentProof);
+
+      // อัปโหลดและรับ response
+      const response = await uploadPaymentProof({
+        orderId,
+        formData,
+      }).unwrap();
+
+      // รีเฟรชข้อมูล order เพื่อให้ได้ URL ของ paymentProof ที่อัปเดตแล้ว
+      await refetch();
+
       setPaymentProof(null);
       setShowSuccessPopup(true);
-      toast.success("อัพโหลดหลักฐานการชำระเงินสำเร็จ และอัพเดตสถานะเป็นชำระเงินสำเร็จ");
+      toast.success("อัพโหลดหลักฐานการชำระเงินสำเร็จ");
+      sendConfirmationEmail(order);
+
+      const fileInput = document.getElementById('file-upload');
+      if (fileInput) fileInput.value = '';
+
     } catch (error) {
-      toast.error(error?.data?.message || error.message);
+      console.error('Error in handleUpload:', error);
+      toast.error(error?.data?.message || 'เกิดข้อผิดพลาดในการอัพโหลด');
     }
   };
+
 
 
   const deliverHandler = async () => {
     try {
-      await deliverOrder(orderId).unwrap();
-      refetch();
+      if (!orderId) {
+        console.error('OrderId is missing');
+        toast.error('ไม่พบ Order ID');
+        return;
+      }
+
+      console.log('Delivering order with ID:', orderId);
+
+      // แก้ไข status ให้ตรงกับ backend
+      const result = await updateOrderStatus({
+        orderId: orderId,
+        type: "delivery",
+        status: "delivered"  // ใช้ค่าที่ backend รองรับ
+      }).unwrap();
+
+      console.log('Delivery result:', result);
+
+      const updatedData = await refetch();
+      console.log('Updated orders after refetch:', updatedData);
+
       toast.success("จัดส่งสินค้าเรียบร้อยแล้ว");
       setShowDeliveryConfirm(false);
+
     } catch (error) {
-      toast.error(error?.data?.message || error.message);
+      console.error('Full error object:', error);
+      const errorMessage =
+        error?.data?.message ||
+        error?.data?.error ||
+        'เกิดข้อผิดพลาดในการอัพเดทสถานะการจัดส่ง';
+
+      toast.error(errorMessage);
     }
+  };
+
+  // เพิ่มการตรวจสอบ URL ก่อนแสดง Modal
+  const handleShowProof = () => {
+    console.log('Payment Proof URL:', order.paymentProof);
+    if (!order.paymentProof) {
+      toast.error('ไม่พบหลักฐานการชำระเงิน');
+      return;
+    }
+    setShowProofModal(true);
   };
 
   if (isLoading) return <Loader />;
   if (error) return <Message variant="danger">{error?.data?.message || error.message}</Message>;
+
+  console.log('Order data:', order);
+  console.log('isPaid:', order?.isPaid);
+  console.log('paymentProof:', order?.paymentProof);
+  console.log('deliver status', order?.deliveryStatus);
+  console.log('isDeliver', order?.isDelivered);
+
 
   console.log(order.user.email);
   return (
@@ -137,37 +219,52 @@ const Order = () => {
             )}
           </div>
         </div>
-  
+
         {/* ส่วนสรุปคำสั่งซื้อ */}
         <div className="lg:w-1/3">
           <div className="bg-white shadow rounded-lg p-6">
             <h2 className="text-xl font-bold mb-4">สรุปคำสั่งซื้อ</h2>
-  
+
             {/* สถานะการชำระเงิน */}
             <div className="mb-6">
-              <div className={`p-3 rounded-lg ${order.isDelivered ? 'bg-green-100' : 'bg-yellow-100'} mb-2`}>
+              <div className={`p-3 rounded-lg ${order.paymentStatus ? 'bg-green-100' : 'bg-yellow-100'} mb-2`}>
                 <p>
-                  สถานะการชำระเงิน: {order.isDelivered
-                    ? `ชำระเงินสำเร็จเมื่อ ${new Date(order.deliveredAt).toLocaleDateString('th-TH')}`
-                    : 'รอการชำระเงิน'}
+                  สถานะการชำระเงิน: {order.paymentStatus === 'paid'
+                    ? `ชำระเงินสำเร็จเมื่อ ${new Date(order.paidAt).toLocaleDateString('th-TH')}`
+                    : order.paymentStatus === 'failed'
+                      ? 'การชำระเงินล้มเหลว'
+                      : 'รอการชำระเงิน'}
                 </p>
+                {/* เพิ่มปุ่มดูหลักฐานการชำระเงิน */}
+                {order.paymentProof?.url && ( // เช็ค url property
+                  <button
+                    onClick={() => setShowProofModal(true)}
+                    className="mt-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm"
+                  >
+                    ดูหลักฐานการชำระเงิน
+                  </button>
+                )}
               </div>
-  
+
+
               {/* สถานะการจัดส่ง */}
-              <div className={`p-3 rounded-lg ${
-                order.deliveryStatus === 'จัดส่งสินค้าสำเร็จแล้ว' ? 'bg-green-100' :
-                order.deliveryStatus === 'เตรียมจัดส่ง' ? 'bg-blue-100' :
-                'bg-yellow-100'
-              }`}>
+              <div className={`p-3 rounded-lg ${order.deliveryStatus === 'delivered' ? 'bg-green-100' :
+                order.deliveryStatus === 'processing' ? 'bg-blue-100' :
+                  'bg-yellow-100'
+                }`}>
                 <p>
-                  สถานะการจัดส่ง: {order.deliveryStatus || 'กำลังเตรียม Order'}
+                  สถานะการจัดส่ง: {order.deliveryStatus === 'delivered'
+                    ? 'จัดส่งสำเร็จ'
+                    : order.deliveryStatus === 'processing'
+                      ? 'กำลังจัดส่ง'
+                      : 'รอจัดส่ง'}
                 </p>
                 {order.deliveredAt && (
                   <p>อัพเดตล่าสุด: {new Date(order.deliveredAt).toLocaleDateString('th-TH')}</p>
                 )}
               </div>
             </div>
-  
+
             {/* รายละเอียดราคา */}
             <div className="border-t pt-4 mb-4">
               <div className="flex justify-between mb-2">
@@ -187,7 +284,7 @@ const Order = () => {
                 <span>฿{order.totalPrice}</span>
               </div>
             </div>
-  
+
             {!order.isPaid && (
               <>
                 <button
@@ -196,7 +293,7 @@ const Order = () => {
                 >
                   แสดง QR Code การชำระเงิน
                 </button>
-  
+
                 <div className="border-t pt-4">
                   <h3 className="text-lg font-semibold mb-4">อัพโหลดหลักฐานการชำระเงิน</h3>
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center mb-4">
@@ -221,28 +318,29 @@ const Order = () => {
                   </div>
                   <button
                     type="button"
-                    className={`w-full py-2 rounded-lg ${
-                      loadingUpload || !paymentProof ? 'bg-gray-400' : 'bg-pink-500 hover:bg-pink-600'
-                    } text-white`}
+                    className={`w-full py-2 rounded-lg ${loadingUpload || !paymentProof
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-pink-500 hover:bg-pink-600'
+                      } text-white flex items-center justify-center`}
                     onClick={handleUpload}
                     disabled={loadingUpload || !paymentProof}
                   >
-                    {loadingUpload ? "กำลังอัพโหลด..." : "อัพโหลดหลักฐานการชำระเงิน"}
+                    {loadingUpload ? (
+                      <>
+                        <svg className="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        กำลังอัพโหลด...
+                      </>
+                    ) : (
+                      "อัพโหลดหลักฐานการชำระเงิน"
+                    )}
                   </button>
                 </div>
               </>
             )}
-  
-            {/* ปุ่มดูหลักฐานการชำระเงิน */}
-            {order?.isPaid && order?.paymentProof && (
-              <button
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg mt-4"
-                onClick={() => setShowProofModal(true)}
-              >
-                ดูหลักฐานการชำระเงิน
-              </button>
-            )}
-  
+
             {userInfo && userInfo.isAdmin && order.isPaid && !order.isDelivered && (
               <button
                 type="button"
@@ -255,60 +353,73 @@ const Order = () => {
           </div>
         </div>
       </div>
-  
+
       {/* Modals */}
-      {showQRModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-xl max-w-md w-full">
-            <h3 className="text-xl font-bold mb-4">สแกน QR Code เพื่อชำระเงิน</h3>
-            <img
-              src="https://shorturl.asia/WXmAl"
-              alt="Payment QR Code"
-              className="mx-auto w-full max-w-xs"
-            />
-            <button
-              className="w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg mt-4"
-              onClick={() => setShowQRModal(false)}
-            >
-              ปิด
-            </button>
-          </div>
-        </div>
-      )}
-  
-      {showDeliveryConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-xl max-w-md w-full">
-            <h3 className="text-xl font-bold mb-4">ยืนยันการจัดส่ง</h3>
-            <p className="mb-4">คุณต้องการยืนยันการจัดส่งสินค้าใช่หรือไม่?</p>
-            <div className="flex gap-4">
+      {
+        showQRModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-xl max-w-md w-full">
+              <h3 className="text-xl font-bold mb-4">สแกน QR Code เพื่อชำระเงิน</h3>
+              <img
+                src="https://shorturl.asia/WXmAl"
+                alt="Payment QR Code"
+                className="mx-auto w-full max-w-xs"
+              />
               <button
-                className="flex-1 bg-gray-200 hover:bg-gray-300 py-2 rounded-lg"
-                onClick={() => setShowDeliveryConfirm(false)}
+                className="w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg mt-4"
+                onClick={() => setShowQRModal(false)}
               >
-                ยกเลิก
-              </button>
-              <button
-                className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg"
-                onClick={deliverHandler}
-              >
-                ยืนยัน
+                ปิด
               </button>
             </div>
           </div>
-        </div>
-      )}
-  
+        )
+      }
+
+      {
+        showDeliveryConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-xl max-w-md w-full">
+              <h3 className="text-xl font-bold mb-4">ยืนยันการจัดส่ง</h3>
+              <p className="mb-4">คุณต้องการยืนยันการจัดส่งสินค้าใช่หรือไม่?</p>
+              <div className="flex gap-4">
+                <button
+                  className="flex-1 bg-gray-200 hover:bg-gray-300 py-2 rounded-lg"
+                  onClick={() => setShowDeliveryConfirm(false)}
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg"
+                  onClick={deliverHandler}
+                >
+                  ยืนยัน
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
       {/* Modal สำหรับแสดงหลักฐานการชำระเงิน */}
       {showProofModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-xl max-w-md w-full">
             <h3 className="text-xl font-bold mb-4">หลักฐานการชำระเงิน</h3>
-            <img
-              src={order.paymentProof}
-              alt="หลักฐานการชำระเงิน"
-              className="mx-auto w-full max-w-xs"
-            />
+            {console.log('Payment Proof URL:', order.paymentProof)}
+            {order.paymentProof?.url ? ( // เปลี่ยนเป็น order.paymentProof.url
+              <img
+                src={order.paymentProof.url} // ใช้ .url เพื่อเข้าถึง URL จริง
+                alt="หลักฐานการชำระเงิน"
+                className="mx-auto w-full max-w-xs"
+                onError={(e) => {
+                  console.error('Image load error:', e);
+                  toast.error('ไม่สามารถโหลดรูปภาพได้');
+                }}
+              />
+            ) : (
+              <p className="text-center text-gray-500">ไม่พบรูปภาพหลักฐานการชำระเงิน</p>
+            )}
             <button
               className="w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg mt-4"
               onClick={() => setShowProofModal(false)}
@@ -318,7 +429,9 @@ const Order = () => {
           </div>
         </div>
       )}
-  
+
+
+
       {/* PaymentSuccessPopup */}
       <PaymentSuccessPopup
         isOpen={showSuccessPopup}
@@ -327,7 +440,7 @@ const Order = () => {
         totalAmount={order?.totalPrice}
         email={order?.user?.email}
       />
-    </div>
+    </div >
   );
 };
 

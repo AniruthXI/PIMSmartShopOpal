@@ -1,86 +1,22 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable react/prop-types */
-import { useState } from "react";
+import React from "react";
+import { Link } from "react-router-dom";
 import Message from "../../components/Message";
 import Loader from "../../components/Loader";
-import { Link } from "react-router-dom";
-import { useGetOrdersQuery, useDeliverOrderMutation, useUpdatePaymentStatusMutation, useUpdateOrderStatusMutation } from "../../redux/api/orderApiSlice";
-import AdminMenu from "./AdminMenu";
-import { toast } from "react-toastify";
+import { useGetMyOrdersQuery } from "../../redux/api/orderApiSlice";
 
-const OrderList = () => {
-    const { data: orders, isLoading, error, refetch } = useGetOrdersQuery({}, {
-        // Add polling to check for updates every 5 seconds
-        pollingInterval: 5000,
+const UserOrderList = () => {
+    const { data: orders, isLoading, error,} = useGetMyOrdersQuery({}, {
+        // เพิ่ม polling options
+        pollingInterval: 5000, // refetch ทุก 5 วินาที
+        refetchOnMountOrArgChange: true,
+        refetchOnFocus: true,
     });
-    const [updateOrderStatus] = useUpdateOrderStatusMutation();
-
-    const [showStatusModal, setShowStatusModal] = useState(false);
-    const [selectedOrder, setSelectedOrder] = useState(null);
-    const [selectedStatus, setSelectedStatus] = useState("");
-    const [modalType, setModalType] = useState("");
 
     // Sort orders by date
     const sortedOrders = orders
         ? [...orders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         : [];
 
-
-    const handleStatusUpdate = async () => {
-        try {
-            console.log('Selected Status:', selectedStatus); // เพิ่ม log เพื่อดูค่าที่ส่งไป
-            const result = await updateOrderStatus({
-                orderId: selectedOrder._id,
-                type: modalType,
-                status: selectedStatus
-            }).unwrap();
-
-            console.log('Update Result:', result); // เพิ่ม log เพื่อดูผลลัพธ์
-
-            if (result.success) {
-                setShowStatusModal(false);
-                await refetch();
-                toast.success(result.message || 'อัพเดทสถานะสำเร็จ');
-            }
-        } catch (err) {
-            console.error("Error updating status:", err);
-            toast.error(err?.data?.message || "เกิดข้อผิดพลาดในการอัพเดตสถานะ");
-        }
-    };
-
-    const openStatusModal = (order, type) => {
-        console.log('Current Order Status:', order, type); // เพิ่ม log
-        setSelectedOrder(order);
-        setModalType(type);
-
-        // ตรวจสอบและตั้งค่าสถานะเริ่มต้นให้ถูกต้อง
-        if (type === "delivery") {
-            const currentStatus = deliveryStatuses.find(s => s.value === order.deliveryStatus);
-            setSelectedStatus(currentStatus ? currentStatus.value : "pending");
-        } else {
-            const currentStatus = paymentStatuses.find(s => s.value === order.paymentStatus);
-            setSelectedStatus(currentStatus ? currentStatus.value : "pending");
-        }
-
-        setShowStatusModal(true);
-    };
-
-    // Status options remain the same
-    const deliveryStatuses = [
-        { value: "pending", label: "รอจัดส่ง" },
-        { value: "processing", label: "กำลังจัดส่ง" },
-        { value: "delivered", label: "จัดส่งแล้ว" },
-        { value: "cancelled", label: "ยกเลิก" }
-    ];
-
-    const paymentStatuses = [
-        { value: "pending", label: "รอชำระเงิน" },
-        { value: "processing", label: "กำลังตรวจสอบ" },
-        { value: "paid", label: "ชำระแล้ว" },
-        { value: "failed", label: "การชำระเงินล้มเหลว" }
-    ];
-
-    // Status badge logic updated to handle both status types correctly
     const PaymentStatusBadge = ({ status }) => {
         switch (status) {
             case 'paid':
@@ -143,7 +79,7 @@ const OrderList = () => {
         <div className="container mx-auto px-4 py-8">
             <div className="bg-white shadow-lg rounded-lg overflow-hidden">
                 <div className="p-6">
-                    <h2 className="text-2xl font-bold mb-6">รายการคำสั่งซื้อทั้งหมด</h2>
+                    <h2 className="text-2xl font-bold mb-6">ประวัติการสั่งซื้อของฉัน</h2>
 
                     {isLoading ? (
                         <Loader />
@@ -151,6 +87,10 @@ const OrderList = () => {
                         <Message variant="danger">
                             {error?.data?.message || error.error}
                         </Message>
+                    ) : sortedOrders.length === 0 ? (
+                        <div className="text-center py-8">
+                            <p className="text-gray-500 text-lg">ยังไม่มีประวัติการสั่งซื้อ</p>
+                        </div>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full">
@@ -163,19 +103,16 @@ const OrderList = () => {
                                             รหัสคำสั่งซื้อ
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            ผู้สั่งซื้อ
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             วันที่สั่งซื้อ
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             ยอดรวม
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            ชำระเงิน
+                                            สถานะการชำระเงิน
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            จัดส่ง
+                                            สถานะการจัดส่ง
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             ดำเนินการ
@@ -207,19 +144,11 @@ const OrderList = () => {
 
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="text-sm text-gray-900">
-                                                    {order.user ? order.user.username : "N/A"}
-                                                </div>
-                                            </td>
-
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-900">
-                                                    {order.createdAt
-                                                        ? new Date(order.createdAt).toLocaleDateString('th-TH', {
-                                                            year: 'numeric',
-                                                            month: 'long',
-                                                            day: 'numeric',
-                                                        })
-                                                        : "N/A"}
+                                                    {new Date(order.createdAt).toLocaleDateString('th-TH', {
+                                                        year: 'numeric',
+                                                        month: 'long',
+                                                        day: 'numeric',
+                                                    })}
                                                 </div>
                                             </td>
 
@@ -230,29 +159,11 @@ const OrderList = () => {
                                             </td>
 
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex items-center gap-2">
-                                                    <PaymentStatusBadge status={order.paymentStatus} />
-                                                    {order && order._id && (
-                                                        <button
-                                                            onClick={() => openStatusModal(order, "payment")}
-                                                            className="text-sm text-blue-600 hover:text-blue-900"
-                                                        >
-                                                            แก้ไข
-                                                        </button>
-                                                    )}
-                                                </div>
+                                                <PaymentStatusBadge status={order.paymentStatus} />
                                             </td>
 
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex items-center gap-2">
-                                                    <DeliveryStatusBadge status={order.deliveryStatus} />
-                                                    <button
-                                                        onClick={() => openStatusModal(order, "delivery")}
-                                                        className="text-sm text-blue-600 hover:text-blue-900"
-                                                    >
-                                                        แก้ไข
-                                                    </button>
-                                                </div>
+                                                <DeliveryStatusBadge status={order.deliveryStatus} />
                                             </td>
 
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -271,44 +182,8 @@ const OrderList = () => {
                     )}
                 </div>
             </div>
-            {showStatusModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                    <div className="bg-white p-6 rounded shadow-md w-80">
-                        <h3 className="text-lg font-bold mb-4 text-center">แก้ไขสถานะ {modalType === "delivery" ? "การจัดส่ง" : "การชำระเงิน"}</h3>
-                        <select
-                            value={selectedStatus}
-                            onChange={(e) => {
-                                console.log('Changing status to:', e.target.value); // เพิ่ม log
-                                setSelectedStatus(e.target.value);
-                            }}
-                            className="border p-2 rounded w-full"
-                        >
-                            {(modalType === "delivery" ? deliveryStatuses : paymentStatuses).map((status) => (
-                                <option key={status.value} value={status.value}>
-                                    {status.label}
-                                </option>
-                            ))}
-                        </select>
-
-                        <div className="mt-4 flex justify-end gap-2">
-                            <button
-                                className="bg-gray-300 px-4 py-2 rounded"
-                                onClick={() => setShowStatusModal(false)}
-                            >
-                                ยกเลิก
-                            </button>
-                            <button
-                                className="bg-blue-500 text-white px-4 py-2 rounded"
-                                onClick={handleStatusUpdate}
-                            >
-                                ยืนยัน
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };
 
-export default OrderList;
+export default UserOrderList;

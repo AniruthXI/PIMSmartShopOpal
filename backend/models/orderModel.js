@@ -90,6 +90,12 @@ const orderSchema = mongoose.Schema(
       enum: ["pending", "processing", "delivered", "cancelled"],
       default: "pending",
     },
+
+     // เพิ่มฟิลด์หลักฐานการชำระเงิน
+     paymentProof: {
+      url: { type: String }, // เก็บ URL รูปภาพ
+      uploadedAt: { type: Date }, // วันที่อัปโหลด
+    },
   },
   {
     timestamps: true,
